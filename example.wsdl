@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://bank.example.com/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  name="bank"
+                  targetNamespace="http://bank.example.com/">
+
+    <!-- Типы данных -->
+    <wsdl:types>
+        <xsd:schema targetNamespace="http://bank.example.com/">
+
+            <!-- Enum для типа счета -->
+            <xsd:simpleType name="accountType">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="SAVINGS"/>
+                    <xsd:enumeration value="CHECKING"/>
+                    <xsd:enumeration value="BUSINESS"/>
+                    <xsd:enumeration value="CREDIT"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- Enum для статуса операции -->
+            <xsd:simpleType name="operationStatus">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="SUCCESS"/>
+                    <xsd:enumeration value="FAILED"/>
+                    <xsd:enumeration value="PENDING"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- Enum для валюты -->
+            <xsd:simpleType name="currency">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="USD"/>
+                    <xsd:enumeration value="EUR"/>
+                    <xsd:enumeration value="GBP"/>
+                    <xsd:enumeration value="JPY"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- Комплексный тип: Адрес -->
+            <xsd:complexType name="address">
+                <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                    <xsd:element name="city" type="xsd:string"/>
+                    <xsd:element name="zipCode" type="xsd:string"/>
+                    <xsd:element name="country" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Комплексный тип: Клиент -->
+            <xsd:complexType name="customer">
+                <xsd:sequence>
+                    <xsd:element name="id" type="xsd:long"/>
+                    <xsd:element name="firstName" type="xsd:string"/>
+                    <xsd:element name="lastName" type="xsd:string"/>
+                    <xsd:element name="email" type="xsd:string"/>
+                    <xsd:element name="phone" type="xsd:string"/>
+                    <xsd:element name="address" type="tns:address"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Комплексный тип: Банковский счет -->
+            <xsd:complexType name="bankAccount">
+                <xsd:sequence>
+                    <xsd:element name="accountNumber" type="xsd:string"/>
+                    <xsd:element name="balance" type="xsd:decimal"/>
+                    <xsd:element name="currency" type="tns:currency"/>
+                    <xsd:element name="type" type="tns:accountType"/>
+                    <xsd:element name="owner" type="tns:customer"/>
+                    <xsd:element name="openDate" type="xsd:date"/>
+                    <xsd:element name="isActive" type="xsd:boolean"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Комплексный тип: Транзакция -->
+            <xsd:complexType name="transaction">
+                <xsd:sequence>
+                    <xsd:element name="id" type="xsd:long"/>
+                    <xsd:element name="fromAccount" type="xsd:string"/>
+                    <xsd:element name="toAccount" type="xsd:string"/>
+                    <xsd:element name="amount" type="xsd:decimal"/>
+                    <xsd:element name="currency" type="tns:currency"/>
+                    <xsd:element name="description" type="xsd:string"/>
+                    <xsd:element name="timestamp" type="xsd:dateTime"/>
+                    <xsd:element name="status" type="tns:operationStatus"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Комплексный тип: Результат операции -->
+            <xsd:complexType name="operationResult">
+                <xsd:sequence>
+                    <xsd:element name="success" type="xsd:boolean"/>
+                    <xsd:element name="message" type="xsd:string"/>
+                    <xsd:element name="transactionId" type="xsd:long" minOccurs="0"/>
+                    <xsd:element name="timestamp" type="xsd:dateTime"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Элементы для исключений -->
+            <xsd:element name="insufficientFundsException" type="tns:insufficientFundsException"/>
+            <xsd:element name="accountNotFoundException" type="tns:accountNotFoundException"/>
+
+            <!-- Исключение: Недостаточно средств -->
+            <xsd:complexType name="insufficientFundsException">
+                <xsd:sequence>
+                    <xsd:element name="accountNumber" type="xsd:string"/>
+                    <xsd:element name="currentBalance" type="xsd:decimal"/>
+                    <xsd:element name="requiredAmount" type="xsd:decimal"/>
+                    <xsd:element name="message" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Исключение: Счет не найден -->
+            <xsd:complexType name="accountNotFoundException">
+                <xsd:sequence>
+                    <xsd:element name="accountNumber" type="xsd:string"/>
+                    <xsd:element name="suggestedAccounts" type="xsd:string" maxOccurs="unbounded"/>
+                    <xsd:element name="message" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Запросы и ответы -->
+            <xsd:element name="getAccountRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="accountNumber" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="getAccountResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="account" type="tns:bankAccount"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="transferRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="fromAccount" type="xsd:string"/>
+                        <xsd:element name="toAccount" type="xsd:string"/>
+                        <xsd:element name="amount" type="xsd:decimal"/>
+                        <xsd:element name="currency" type="tns:currency"/>
+                        <xsd:element name="description" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="transferResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="result" type="tns:operationResult"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="getTransactionHistoryRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="accountNumber" type="xsd:string"/>
+                        <xsd:element name="fromDate" type="xsd:date"/>
+                        <xsd:element name="toDate" type="xsd:date"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="getTransactionHistoryResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="transactions" type="tns:transaction" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+        </xsd:schema>
+    </wsdl:types>
+
+    <!-- Сообщения -->
+    <wsdl:message name="getAccountInput">
+        <wsdl:part name="parameters" element="tns:getAccountRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getAccountOutput">
+        <wsdl:part name="parameters" element="tns:getAccountResponse"/>
+    </wsdl:message>
+    <wsdl:message name="transferInput">
+        <wsdl:part name="parameters" element="tns:transferRequest"/>
+    </wsdl:message>
+    <wsdl:message name="transferOutput">
+        <wsdl:part name="parameters" element="tns:transferResponse"/>
+    </wsdl:message>
+    <wsdl:message name="getTransactionHistoryInput">
+        <wsdl:part name="parameters" element="tns:getTransactionHistoryRequest"/>
+    </wsdl:message>
+    <wsdl:message name="getTransactionHistoryOutput">
+        <wsdl:part name="parameters" element="tns:getTransactionHistoryResponse"/>
+    </wsdl:message>
+
+    <!-- Исключения -->
+    <wsdl:message name="insufficientFundsFault">
+        <wsdl:part name="fault" element="tns:insufficientFundsException"/>
+    </wsdl:message>
+    <wsdl:message name="accountNotFoundFault">
+        <wsdl:part name="fault" element="tns:accountNotFoundException"/>
+    </wsdl:message>
+
+    <!-- Порт типа -->
+    <wsdl:portType name="BankServicePortType">
+        <wsdl:operation name="getAccount">
+            <wsdl:input message="tns:getAccountInput"/>
+            <wsdl:output message="tns:getAccountOutput"/>
+            <wsdl:fault name="accountNotFoundFault" message="tns:accountNotFoundFault"/>
+        </wsdl:operation>
+        <wsdl:operation name="transfer">
+            <wsdl:input message="tns:transferInput"/>
+            <wsdl:output message="tns:transferOutput"/>
+            <wsdl:fault name="insufficientFundsFault" message="tns:insufficientFundsFault"/>
+            <wsdl:fault name="accountNotFoundFault" message="tns:accountNotFoundFault"/>
+        </wsdl:operation>
+        <wsdl:operation name="getTransactionHistory">
+            <wsdl:input message="tns:getTransactionHistoryInput"/>
+            <wsdl:output message="tns:getTransactionHistoryOutput"/>
+            <wsdl:fault name="accountNotFoundFault" message="tns:accountNotFoundFault"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <!-- Привязка -->
+    <wsdl:binding name="BankServiceSoapBinding" type="tns:BankServicePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getAccount">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="accountNotFoundFault">
+                <soap:fault name="accountNotFoundFault" use="literal"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="transfer">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="insufficientFundsFault">
+                <soap:fault name="insufficientFundsFault" use="literal"/>
+            </wsdl:fault>
+            <wsdl:fault name="accountNotFoundFault">
+                <soap:fault name="accountNotFoundFault" use="literal"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="getTransactionHistory">
+            <soap:operation soapAction=""/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="accountNotFoundFault">
+                <soap:fault name="accountNotFoundFault" use="literal"/>
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <!-- Сервис -->
+    <wsdl:service name="BankService">
+        <wsdl:port name="BankServicePort" binding="tns:BankServiceSoapBinding">
+            <soap:address location="http://localhost:8080/bank-service"/>
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>
