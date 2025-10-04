@@ -10,17 +10,14 @@ import java.math.BigDecimal;
 
 public class TestExample {
 
-    static private final BankServicePortType port = ClientFactory.getClient();
-
-
     @Test
-    public void exampleTest() throws JAXBException, AccountNotFoundFault, InsufficientFundsFault {
+    public void exampleTest() throws JAXBException {
         TransferRequest request = new TransferRequest();
         request.setAmount(new BigDecimal(10));
         request.setCurrency(Currency.USD);
         request.setDescription("Example Description");
-        request.withFromAccount("100-1");
-        request.withToAccount("100-2");
+        request.setFromAccount("100-1");
+        request.setToAccount("100-2");
 
 //        port.transfer(request);
 
